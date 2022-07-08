@@ -34,14 +34,17 @@ export const TransactionsProvider = ({ children }) => {
   const [transactionCount, setTransactionCount] = useState(
     localStorage.getItem("transactionCount")
   );
+  const [transactionHistory, setTransactionHistory] = useState([]);
+  const [fetchingTransactionHistory, setFetchingTransactionHistory] =
+    useState(false);
 
   const handleTransactionInputChange = (e) => {
-    const { name, value } = e.target || {};
-    setFormData((prevFormData) => {
-      setFormData({
-        ...prevFormData,
+    const { name, value } = e.target;
+    setFormData((prevState) => {
+      return {
+        ...prevState,
         [name]: value,
-      });
+      };
     });
   };
 
@@ -77,6 +80,7 @@ export const TransactionsProvider = ({ children }) => {
         method: "eth_requestAccounts",
       });
       if (accounts.length) {
+        console.log("connected account log", accounts[0]);
         setConnectedAccount(accounts[0]);
       } else {
         console.log("No account found");
@@ -119,6 +123,7 @@ export const TransactionsProvider = ({ children }) => {
       setTransactionCount(tCount.toNumber());
       setIsLoading(false);
       console.log("transaction successfull...");
+      window.location.reload();
     } catch (error) {
       setIsLoading(false);
       throw new Error("No ethereum object found");
@@ -142,12 +147,27 @@ export const TransactionsProvider = ({ children }) => {
         console.log("Please install metamask");
         return;
       }
+      setFetchingTransactionHistory(true);
       const { transactionContract } = getEthereumContract();
       console.log("fetching existing transactions ....");
       const existingTransactions =
         await transactionContract.getAllTransactions();
-      console.log("existingTransactions --->", existingTransactions);
+      const formatExistingTransactions = existingTransactions.map((_t) => {
+        const { receiver, sender, amount, message, keyword, timestamp } = _t;
+        return {
+          receiver,
+          sender,
+          message,
+          keyword,
+          amount: parseInt(amount._hex) / 10 ** 18,
+          timestamp: new Date(timestamp.toNumber() * 1000).toLocaleString(),
+        };
+      });
+      console.log("existingTransactions --->", formatExistingTransactions);
+      setTransactionHistory(formatExistingTransactions);
+      setFetchingTransactionHistory(false);
     } catch (error) {
+      setFetchingTransactionHistory(false);
       console.log(error);
       throw new Error("no ethereum object found");
     }
@@ -168,6 +188,8 @@ export const TransactionsProvider = ({ children }) => {
         sendTransaction,
         handleTransactionInputChange,
         isLoading,
+        transactionHistory,
+        fetchingTransactionHistory,
       }}
     >
       {children}

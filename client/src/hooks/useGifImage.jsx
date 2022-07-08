@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 const APIKEY = import.meta.env.VITE_GIPHY_API;
-function useGifImage({ imgKey }) {
+function useGifImage({ keyword }) {
   const [gifUrl, setGifUrl] = useState("");
 
   const fetchGifs = async () => {
     try {
       const response = await fetch(
-        `https://api.giphy.com/v1/gifs/search?api_key=${APIKEY}&q=${imgKey
-          .split(" ")
-          .join("")}&limit=1`
+        `https://api.giphy.com/v1/gifs/search?api_key=${APIKEY}&q=${keyword}&limit=1`
       );
       const { data } = await response.json();
       setGifUrl(data[0]?.images?.downsized_medium.url);
@@ -20,8 +18,8 @@ function useGifImage({ imgKey }) {
   };
 
   useEffect(() => {
-    if (imgKey) fetchGifs();
-  }, [imgKey]);
+    if (keyword) fetchGifs();
+  }, [keyword]);
   return gifUrl;
 }
 
